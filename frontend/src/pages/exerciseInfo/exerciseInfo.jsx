@@ -9,7 +9,7 @@ import { AuthContext } from "../../utils/authentication/auth-context";
 import axios from "axios";
 import { makeStyles } from '@mui/styles';
 import ROUTES from "../../routes";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const useStyles = makeStyles((theme) => ({
     root: {
@@ -36,7 +36,6 @@ const ExerciseInfo = () => {
     const [reps, setReps] = useState(0);
     const [time, setTime] = useState(0);
     const [exerciseType, setExerciseType] = useState('');
-    const [priorExercise, setPriorExercise] = useState();
 
     const { user } = useContext(AuthContext);
     const userId = user._id;
@@ -51,14 +50,6 @@ const ExerciseInfo = () => {
         hash: ""
     }); //tracks food item
 
-    const handleClick0 = () => {
-        setStarClick1(false);
-        setStarClick2(false);
-        setStarClick3(false);
-        setStarClick4(false);
-        setStarClick5(false);
-        // setScore(0);
-    }
     const handleClick1 = () => {
         setStarClick1(true);
         setStarClick2(false);
@@ -119,11 +110,7 @@ const ExerciseInfo = () => {
                 const priorCheck = await axios.get(`/users/priorExercise/${userId}/${item.exerciseName}`,
                 { headers: { token: `Bearer ${user.accessToken}` } });
 
-                if(priorCheck.data !== "No Prior History") {
-                    setPriorExercise(priorCheck.data);
-                } else {
-                    setPriorExercise("N/A");
-                }
+                // Prior exercise is fetched for future enhancement hooks.
                 
                 setExercise({
                     exerciseName: item.exerciseName,
@@ -149,7 +136,7 @@ const ExerciseInfo = () => {
 
         try {
             const hash = exerciseHash;
-            const res = await axios.put(
+            await axios.put(
                 `/users/editExercise/${userId}`,
                 { exerciseName, sets, reps, time, exerciseType, hash },
                 { headers: { token: `Bearer ${user.accessToken}` } }
@@ -174,7 +161,7 @@ const ExerciseInfo = () => {
     const handleDeleteExercise = async () => {
         try {
             const hash = exerciseHash;
-            const res = await axios.delete(
+            await axios.delete(
                 `/users/deleteExercise/${userId}/${hash}`,
                 { headers: { token: `Bearer ${user.accessToken}` } }
             );

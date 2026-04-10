@@ -77,7 +77,7 @@ const ExerciseTracker = () => {
                 const resOther = await axios.get(`/users/allOther/${userId}`, {
                     headers: { token: `Bearer ${user.accessToken}` }
                 });
-                const resActivityLevel = resActivity.data.length == 0 ? "[none]" : resActivity.data[0].activityLevel;
+                const resActivityLevel = resActivity.data.length === 0 ? "[none]" : resActivity.data[0].activityLevel;
                 const resLifestyle = resActivity.data.length === 0 ? "[none]" : resActivity.data[0].lifestyle;
                 const fitnessGoalsRes = await axios.get(`/users/fitnessGoals/${userId}`, {
                     headers: { token: `Bearer ${user.accessToken}` }
@@ -160,12 +160,11 @@ const ExerciseTracker = () => {
     const handleSaveActivityInfo = async () => {
 
         try {
-            const res = await axios.put(
+            await axios.put(
                 `users/saveActivityInfo/${userId}`,
                 { activityLevel, lifestyle },
                 { headers: { token: `Bearer ${user.accessToken}` } }
             );
-            console.log(res);
             console.log(activityLevel, lifestyle);
         } catch (error) {
             console.error(error);

@@ -23,7 +23,7 @@ import MedicationIcon from '@mui/icons-material/Medication'; // supplement icon
 import PropTypes from 'prop-types';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
-import { LineChart, BarChart, axisClasses } from '@mui/x-charts';
+import { LineChart } from '@mui/x-charts';
 
 // TabPanel setup
 function TabPanel(props) {

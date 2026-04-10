@@ -9,7 +9,6 @@ import { useState } from "react";
 import { useEffect } from "react";
 import { useRef } from "react";
 import RegexUtil from "../../utils/regex-util";
-import { Replay30 } from "@mui/icons-material";
 
 /**
  * Returns a react component consisting of the Personal Info page. 
