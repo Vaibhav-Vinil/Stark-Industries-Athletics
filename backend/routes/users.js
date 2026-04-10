@@ -17,14 +17,31 @@ const sumTodayWaterIntake = (waterLog = []) => {
   }, 0);
 };
 
-const getExerciseTotals = (user) => {
+const getTodaysExerciseEntries = (user) => {
   const today = getTodayDateString();
   const allExercises = user.liftingLog.concat(user.cardioLog).concat(user.otherExerciseLog);
-  const todaysExercises = allExercises.filter((exercise) => {
+  return allExercises.filter((exercise) => {
     if (!exercise || !exercise.hash || !exercise.hash.includes("*")) return false;
     return exercise.hash.split("*")[1] === today;
   });
+};
 
+const formatExerciseLine = (exercise) => {
+  const name = String(exercise.exerciseName || "Exercise").trim() || "Exercise";
+  if (exercise.exerciseType === "Weight Lifting") {
+    return `${name} (${exercise.sets} sets, ${exercise.reps} reps)`;
+  }
+  return `${name} (${exercise.time} mins)`;
+};
+
+const getTodaysExerciseDetailsText = (user) => {
+  const entries = getTodaysExerciseEntries(user);
+  if (entries.length === 0) return "No exercises logged today.";
+  return entries.map(formatExerciseLine).join("; ");
+};
+
+const getExerciseTotals = (user) => {
+  const todaysExercises = getTodaysExerciseEntries(user);
   return {
     total: todaysExercises.length,
     lifting: todaysExercises.filter((exercise) => exercise.exerciseType === "Weight Lifting").length,
@@ -43,7 +60,7 @@ const getCaloriesFromFoods = (foods = []) => {
   }, 0);
 };
 
-const getDefaultJarvisReply = (prompt, goals, exercises, calories, water) => {
+const getDefaultJarvisReply = (prompt, goals, exercises, calories, water, exerciseDetailsText) => {
   if (prompt.includes("water") || prompt.includes("hydrate")) {
     const remaining = Math.max(0, Number(goals.dailyWaterTarget) - water);
     return remaining > 0
@@ -54,7 +71,7 @@ const getDefaultJarvisReply = (prompt, goals, exercises, calories, water) => {
   if (prompt.includes("workout") || prompt.includes("train")) {
     return exercises.total === 0
       ? "No workouts logged today. Start with a 20-minute cardio mission to build momentum."
-      : `You completed ${exercises.total} workout entries today (${exercises.lifting} lifting, ${exercises.cardio} cardio, ${exercises.other} other). Keep it up.`;
+      : `You completed ${exercises.total} workout entries today (${exercises.lifting} lifting, ${exercises.cardio} cardio, ${exercises.other} other). Logged: ${exerciseDetailsText}`;
   }
 
   if (prompt.includes("nutrition") || prompt.includes("calorie") || prompt.includes("food")) {
@@ -63,18 +80,20 @@ const getDefaultJarvisReply = (prompt, goals, exercises, calories, water) => {
       : `You have logged ${calories} calories today. Prioritize protein and hydration for recovery.`;
   }
 
-  return `Mission ${goals.missionName} status: ${exercises.total} workouts today, ${calories} calories logged, ${water} ml water consumed.`;
+  return `Mission ${goals.missionName} status: ${exercises.total} workouts today (${exerciseDetailsText}), ${calories} calories logged, ${water} ml water consumed.`;
 };
 
-const getGroqJarvisReply = async ({ prompt, goals, exercises, calories, water }) => {
+const getGroqJarvisReply = async ({ prompt, goals, exercises, calories, water, exerciseDetailsText }) => {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) return null;
 
-  const systemPrompt = "You are JARVIS for an Avengers training app. Respond with concise, actionable coaching in 1-3 sentences.";
+  const systemPrompt =
+    "You are JARVIS for an Avengers training app. Respond with concise, actionable coaching in 1-3 sentences. You may reference the user's logged exercises by name when relevant.";
   const userPrompt = [
     `User question: ${prompt || "Give my mission status."}`,
     `Mission name: ${goals.missionName}`,
     `Today's workouts: ${exercises.total} (lifting ${exercises.lifting}, cardio ${exercises.cardio}, other ${exercises.other})`,
+    `Today's exercises (detail): ${exerciseDetailsText}`,
     `Today's calories logged: ${calories}`,
     `Today's water intake: ${water} ml`,
     `Daily water target: ${goals.dailyWaterTarget} ml`,
@@ -602,12 +621,20 @@ router.post("/jarvis/:userId", verify, async (req, res) => {
       : { missionName: "General Training", weeklyWorkoutTarget: 5, dailyWaterTarget: 3000 };
 
     const exercises = getExerciseTotals(user);
+    const exerciseDetailsText = getTodaysExerciseDetailsText(user);
     const calories = getCaloriesFromFoods(user.foods);
     const water = sumTodayWaterIntake(user.waterIntakeLog);
 
-    let response = getDefaultJarvisReply(prompt, goals, exercises, calories, water);
+    let response = getDefaultJarvisReply(prompt, goals, exercises, calories, water, exerciseDetailsText);
     try {
-      const groqReply = await getGroqJarvisReply({ prompt, goals, exercises, calories, water });
+      const groqReply = await getGroqJarvisReply({
+        prompt,
+        goals,
+        exercises,
+        calories,
+        water,
+        exerciseDetailsText
+      });
       if (groqReply) {
         response = groqReply;
       }
