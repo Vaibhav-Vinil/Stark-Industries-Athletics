@@ -107,8 +107,9 @@ const ExerciseInfo = () => {
                 console.log(`Bearer ${user.accessToken}`);
                 const item = response.data;
 
-                const priorCheck = await axios.get(`/users/priorExercise/${userId}/${item.exerciseName}`,
-                { headers: { token: `Bearer ${user.accessToken}` } });
+                await axios.get(`/users/priorExercise/${userId}/${item.exerciseName}`, {
+                    headers: { token: `Bearer ${user.accessToken}` }
+                });
 
                 // Prior exercise is fetched for future enhancement hooks.
                 
